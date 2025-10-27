@@ -12,8 +12,8 @@ const PORT = process.env.PORT || 3000;
 // Middleware
 app.use(helmet());
 app.use(cors());
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(express.json({ limit: '10mb' })); // Increased payload limit for large canvas data
+app.use(express.urlencoded({ extended: true, limit: '10mb' })); // Increased payload limit
 
 // Rate limiting
 const limiter = rateLimit({
@@ -43,6 +43,16 @@ app.use((req, res) => {
 // Error handler
 app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
   console.error('Error:', err);
+
+  // Handle payload too large error
+  if (err.type === 'entity.too.large') {
+    return res.status(413).json({
+      success: false,
+      error: 'Payload Too Large',
+      message: 'The request entity is too large. Maximum size is 10MB.',
+    });
+  }
+
   res.status(err.status || 500).json({
     error: {
       message: err.message || 'Internal server error',
@@ -57,8 +67,6 @@ async function startServer() {
     // Log environment configuration
     console.log('📋 Environment Configuration:');
     console.log(`   MONGODB_URI: ${process.env.MONGODB_URI ? '✓ Set' : '✗ Not set'}`);
-    console.log(`   DB_NAME: ${process.env.DB_NAME || 'editor (default)'}`);
-    console.log(`   PORT: ${PORT}`);
     
     await connectDatabase();
     

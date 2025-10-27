@@ -1,15 +1,16 @@
 # Editor Backend
 
-A NestJS backend application for the editor project.
+A Node.js + Express backend application for the editor project.
 
 ## Description
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+Express.js TypeScript backend with MongoDB support.
 
 ## Requirements
 
 - Node.js >= 18.20.0
 - npm >= 8.x
+- MongoDB (optional, for database features)
 
 If you're using nvm, you can automatically switch to the correct Node version:
 ```bash
@@ -28,9 +29,31 @@ npm install
 # development
 npm run start:dev
 
+# or
+npm run dev
+
 # production mode
+npm run build
 npm run start:prod
 ```
+
+## Project Structure
+
+```
+src/
+├── controllers/      # Route controllers
+├── routes/           # API routes
+├── services/         # Business logic
+├── models/           # Database models
+├── utils/            # Utility functions
+└── index.ts         # App entry point
+```
+
+## API Endpoints
+
+- `GET /` - API information
+- `GET /health` - Health check
+- `GET /api` - Main API endpoint
 
 ## Test
 
@@ -38,24 +61,20 @@ npm run start:prod
 # unit tests
 npm run test
 
-# e2e tests
-npm run test:e2e
-
 # test coverage
 npm run test:cov
 ```
 
-## Support
+## Environment Variables
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+Create a `.env` file in the root directory:
 
-## Stay in touch
-
-- Author - [NestJS](https://nestjs.com)
-- Website - [https://nestjs.com](https://nestjs.com)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
+```env
+PORT=3000
+MONGODB_URI=mongodb://localhost:27017/editor
+NODE_ENV=development
+```
 
 ## License
 
-Nest is [MIT licensed](LICENSE).
-
+MIT

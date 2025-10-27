@@ -39,8 +39,6 @@ lerna-debug.log*
 .env.local
 .env.*.local
 
-
-
 .config/
 .cache/
 .aws/

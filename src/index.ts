@@ -1,8 +1,10 @@
+import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
 import routes from './routes';
+import { connectDatabase } from './config/database';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -21,7 +23,7 @@ const limiter = rateLimit({
 app.use('/api/', limiter);
 
 // Routes
-app.use('/api', routes);
+app.use('/api/v1', routes);
 
 // Health check
 app.get('/health', (req, res) => {
@@ -49,10 +51,28 @@ app.use((err: any, req: express.Request, res: express.Response, next: express.Ne
   });
 });
 
-app.listen(PORT, () => {
-  console.log(`🚀 Server running on port ${PORT}`);
-  console.log(`📍 http://localhost:${PORT}`);
-});
+// Initialize database connection and start server
+async function startServer() {
+  try {
+    // Log environment configuration
+    console.log('📋 Environment Configuration:');
+    console.log(`   MONGODB_URI: ${process.env.MONGODB_URI ? '✓ Set' : '✗ Not set'}`);
+    console.log(`   DB_NAME: ${process.env.DB_NAME || 'editor (default)'}`);
+    console.log(`   PORT: ${PORT}`);
+    
+    await connectDatabase();
+    
+    app.listen(PORT, () => {
+      console.log(`🚀 Server running on port ${PORT}`);
+      console.log(`📍 http://localhost:${PORT}`);
+      console.log(`📝 API endpoints available at http://localhost:${PORT}/api/v1`);
+    });
+  } catch (error) {
+    console.error('✗ Failed to start server:', error);
+    process.exit(1);
+  }
+}
+
+startServer();
 
 export default app;
-

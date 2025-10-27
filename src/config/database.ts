@@ -1,0 +1,29 @@
+import canvasModel from '../models/CanvasDesign';
+
+const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017';
+const DB_NAME = process.env.DB_NAME || 'editor';
+
+let isConnected = false;
+
+export async function connectDatabase(): Promise<void> {
+  try {
+    if (isConnected) {
+      console.log('✓ Database already connected');
+      return;
+    }
+
+    if (!MONGODB_URI) {
+      throw new Error('MONGODB_URI is not defined in environment variables');
+    }
+
+    console.log(`📦 Connecting to MongoDB: ${MONGODB_URI}`);
+    await canvasModel.connect(MONGODB_URI, DB_NAME);
+    isConnected = true;
+    console.log('✓ Database connected successfully');
+  } catch (error) {
+    console.error('✗ Database connection failed:', error);
+    throw error;
+  }
+}
+
+export default { connectDatabase };

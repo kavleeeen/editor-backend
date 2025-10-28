@@ -11,6 +11,7 @@ Express.js TypeScript backend with MongoDB support for saving and retrieving can
 - Node.js >= 18.20.0
 - npm >= 8.x
 - MongoDB
+ - (Optional) Google Cloud SDK for deployment
 
 If you're using nvm, you can automatically switch to the correct Node version:
 ```bash
@@ -73,9 +74,10 @@ CORS_ORIGIN=http://localhost:5173
 ### Required Environment Variables
 
 - `PORT` - HTTP server port (default: 3000)
-- `WEBSOCKET_PORT` - WebSocket server port (default: 3001)
 - `MONGODB_URI` - MongoDB connection string
 - `JWT_SECRET` - Secret key for JWT tokens
+
+> Note: On Cloud Run, `PORT` is injected automatically as 8080. WebSockets run on the same HTTP port.
 
 ## API Endpoints
 
@@ -230,7 +232,7 @@ curl -X DELETE http://localhost:3000/api/v1/canvas/12345678-1234-1234-1234-12345
 The backend supports real-time collaboration through WebSocket connections. Connect to the WebSocket server using:
 
 ```
-ws://localhost:3001?token=YOUR_JWT_TOKEN&doc=canvas-id
+ws://localhost:3000?token=YOUR_JWT_TOKEN&doc=canvas-id
 ```
 
 ### Connection Parameters
@@ -299,3 +301,52 @@ npm run test:cov
 ## License
 
 MIT
+
+## Deploy to Cloud Run (simplest flow)
+
+### One-time setup
+
+1. Install Google Cloud SDK and authenticate:
+   ```bash
+   gcloud auth login
+   gcloud auth application-default login
+   gcloud config set project YOUR_PROJECT_ID
+   gcloud config set run/region us-central1
+   ```
+
+2. Enable required APIs:
+   ```bash
+   gcloud services enable run.googleapis.com cloudbuild.googleapis.com
+   ```
+
+### Deploy
+
+Option A — helper script (recommended):
+```bash
+export PROJECT_ID=YOUR_PROJECT_ID
+export REGION=us-central1
+export SERVICE_NAME=editor-backend
+export MONGODB_URI='YOUR_PRODUCTION_MONGODB_URI'
+
+./deploy-cloudrun.sh
+```
+
+Option B — single commands:
+```bash
+gcloud builds submit --tag gcr.io/$PROJECT_ID/editor-backend:latest
+
+gcloud run deploy editor-backend \
+  --image gcr.io/$PROJECT_ID/editor-backend:latest \
+  --platform managed \
+  --region us-central1 \
+  --allow-unauthenticated \
+  --port 8080 \
+  --set-env-vars NODE_ENV=production,MONGODB_URI=YOUR_PRODUCTION_MONGODB_URI
+```
+
+After deploy, get the URL:
+```bash
+gcloud run services describe editor-backend --region us-central1 --format='value(status.url)'
+```
+
+WebSocket URL will use the same origin with `ws://` or `wss://` depending on HTTPS.

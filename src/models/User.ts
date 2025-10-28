@@ -1,5 +1,6 @@
-import { MongoClient, Db, Collection, ObjectId } from 'mongodb';
+import { Db, Collection, ObjectId } from 'mongodb';
 import bcrypt from 'bcryptjs';
+import { getDatabase } from '../config/database';
 
 export interface User {
   _id?: ObjectId;
@@ -11,18 +12,22 @@ export interface User {
 }
 
 class UserModel {
-  private db: Db | null = null;
   private collection: Collection<User> | null = null;
 
-  async connect(mongoUri: string, dbName: string = 'editor'): Promise<void> {
-    const client = new MongoClient(mongoUri);
-    await client.connect();
-    this.db = client.db(dbName);
-    this.collection = this.db.collection<User>('users');
+  async connect(): Promise<void> {
+    try {
+      console.log('Initializing User model with centralized connection...');
+      const db = getDatabase();
+      this.collection = db.collection<User>('users');
 
-    // Create indexes
-    await this.collection.createIndex({ email: 1 }, { unique: true });
-    await this.collection.createIndex({ createdAt: -1 });
+      // Create indexes
+      await this.collection.createIndex({ email: 1 }, { unique: true });
+      await this.collection.createIndex({ createdAt: -1 });
+      console.log('User model initialized successfully');
+    } catch (error) {
+      console.error('User model initialization failed:', error);
+      throw error;
+    }
   }
 
   private getCollection(): Collection<User> {

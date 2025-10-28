@@ -10,14 +10,16 @@ import http from 'http';
 import { WebSocketServer } from 'ws';
 
 const app = express();
-const HTTP_PORT = process.env.PORT ? Number(process.env.PORT) : 3000;
-const WS_PORT = 3001;
+const PORT = process.env.PORT ? Number(process.env.PORT) : 3000;
 
 // ----------------- Middleware -----------------
 app.use(helmet());
 app.use(cors());
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
+// Trust proxy for Cloud Run (fixes rate limiting X-Forwarded-For warning)
+app.set('trust proxy', 1);
 
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000,
@@ -61,15 +63,16 @@ async function startServer() {
     console.log(`   MONGODB_URI: ${process.env.MONGODB_URI ? '✓ Set' : '✗ Not set'}`);
 
     await connectDatabase();
-    // Start HTTP (Express)
-    const httpServer = app.listen(HTTP_PORT, () => {
-      console.log(`🚀 HTTP Server running on port ${HTTP_PORT}`);
-      console.log(`📝 API endpoints available at http://localhost:${HTTP_PORT}/api/v1`);
+
+    // Start HTTP server with WebSocket support on the same port
+    const httpServer = app.listen(PORT, () => {
+      console.log(`🚀 HTTP+WS Server running on port ${PORT}`);
+      console.log(`📝 API endpoints available at http://localhost:${PORT}/api/v1`);
+      console.log(`🔗 WebSocket server available at ws://localhost:${PORT}`);
     });
 
-    // Start WebSocket server for Yjs collaboration
-    const wsHttpServer = http.createServer();
-    const wss = new WebSocketServer({ server: wsHttpServer });
+    // Attach WebSocket server to the same HTTP server
+    const wss = new WebSocketServer({ server: httpServer });
 
     // Dynamically require the CommonJS module
     const { setupWSConnection } = require('@y/websocket-server/utils');
@@ -82,10 +85,6 @@ async function startServer() {
       } catch (hErr) {
         console.error('Error while handling incoming WS connection:', hErr);
       }
-    });
-
-    wsHttpServer.listen(WS_PORT, () => {
-      console.log(`🔗 Yjs WebSocket server listening on ws://localhost:${WS_PORT}`);
     });
   } catch (error) {
     console.error('✗ Failed to start servers:', error);

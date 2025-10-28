@@ -1,5 +1,6 @@
-import { MongoClient, Db, Collection } from 'mongodb';
+import { Db, Collection } from 'mongodb';
 import { randomUUID } from 'crypto';
+import { getDatabase } from '../config/database';
 import canvasAccessModel from './CanvasAccess';
 
 export interface CanvasMetadata {
@@ -25,15 +26,18 @@ export interface CanvasDesign {
 }
 
 class CanvasDesignModel {
-  private db: Db | null = null;
   private collection: Collection<CanvasDesign> | null = null;
 
-  async connect(mongoUri: string, dbName: string = 'editor'): Promise<void> {
-    const client = new MongoClient(mongoUri);
-    await client.connect();
-    this.db = client.db(dbName);
-    this.collection = this.db.collection<CanvasDesign>('canvas_designs');
-
+  async connect(): Promise<void> {
+    try {
+      console.log('Initializing CanvasDesign model with centralized connection...');
+      const db = getDatabase();
+      this.collection = db.collection<CanvasDesign>('canvas_designs');
+      console.log('CanvasDesign model initialized successfully');
+    } catch (error) {
+      console.error('CanvasDesign model initialization failed:', error);
+      throw error;
+    }
   }
 
   async save(id: string, userId: string, designData: any, metadata: Partial<CanvasMetadata>): Promise<CanvasDesign> {

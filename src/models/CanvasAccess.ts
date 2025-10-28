@@ -1,4 +1,5 @@
-import { MongoClient, Db, Collection } from 'mongodb';
+import { Db, Collection } from 'mongodb';
+import { getDatabase } from '../config/database';
 
 export interface CanvasAccess {
   _id: string;
@@ -11,18 +12,22 @@ export interface CanvasAccess {
 }
 
 class CanvasAccessModel {
-  private db: Db | null = null;
   private collection: Collection<CanvasAccess> | null = null;
 
-  async connect(mongoUri: string, dbName: string = 'editor'): Promise<void> {
-    const client = new MongoClient(mongoUri);
-    await client.connect();
-    this.db = client.db(dbName);
-    this.collection = this.db.collection<CanvasAccess>('canvas_access');
+  async connect(): Promise<void> {
+    try {
+      console.log('Initializing CanvasAccess model with centralized connection...');
+      const db = getDatabase();
+      this.collection = db.collection<CanvasAccess>('canvas_access');
+      console.log('CanvasAccess model initialized successfully');
+    } catch (error) {
+      console.error('CanvasAccess model initialization failed:', error);
+      throw error;
+    }
 
     // Create indexes with error handling for existing indexes
     try {
-      await this.collection.createIndex({ canvasId: 1, userId: 1 }, { unique: true });
+      await this.collection!.createIndex({ canvasId: 1, userId: 1 }, { unique: true });
     } catch (error: any) {
       if (error.code === 86) { // IndexKeySpecsConflict
         console.log('Index canvasId_1_userId_1 already exists, skipping...');
@@ -32,7 +37,7 @@ class CanvasAccessModel {
     }
 
     try {
-      await this.collection.createIndex({ canvasId: 1 });
+      await this.collection!.createIndex({ canvasId: 1 });
     } catch (error: any) {
       if (error.code === 86) {
         console.log('Index canvasId_1 already exists, skipping...');
@@ -42,7 +47,7 @@ class CanvasAccessModel {
     }
 
     try {
-      await this.collection.createIndex({ userId: 1 });
+      await this.collection!.createIndex({ userId: 1 });
     } catch (error: any) {
       if (error.code === 86) {
         console.log('Index userId_1 already exists, skipping...');

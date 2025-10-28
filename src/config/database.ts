@@ -2,6 +2,7 @@ import { MongoClient, Db } from 'mongodb';
 import canvasModel from '../models/CanvasDesign';
 import userModel from '../models/User';
 import canvasAccessModel from '../models/CanvasAccess';
+import commentModel from '../models/Comment';
 
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017';
 const DB_NAME = process.env.DB_NAME || 'editor';
@@ -58,6 +59,7 @@ export async function connectDatabase(): Promise<void> {
         await canvasModel.connect();
         await userModel.connect();
         await canvasAccessModel.connect();
+        await commentModel.connect();
         break;
       } catch (error) {
         retries--;

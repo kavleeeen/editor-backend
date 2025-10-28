@@ -12,6 +12,22 @@ router.post('/', authenticateToken, CanvasController.createBlankCanvas.bind(Canv
 // List all canvas designs for the authenticated user - must be before GET /:id
 router.get('/', authenticateToken, CanvasController.listCanvases.bind(CanvasController));
 
+// Get all users (for sharing purposes) - MUST be before /:id route
+router.get('/users', authenticateToken, CanvasController.getAllUsers.bind(CanvasController));
+
+// Share canvas with another user
+router.post('/share', authenticateToken, CanvasController.shareCanvas.bind(CanvasController));
+
+// Share canvas with multiple users
+router.post('/share-multiple', authenticateToken, CanvasController.shareCanvasWithMultipleUsers.bind(CanvasController));
+
+// Comment routes for a specific canvas - MUST be before /:id route
+// Save comment for a canvas
+router.post('/:canvasId/comments', authenticateToken, CanvasController.saveComment.bind(CanvasController));
+
+// Get all comments for a canvas
+router.get('/:canvasId/comments', authenticateToken, CanvasController.getComments.bind(CanvasController));
+
 // Update existing canvas design
 router.patch('/:id', authenticateToken, CanvasController.updateCanvas.bind(CanvasController));
 
@@ -20,10 +36,6 @@ router.get('/:id', authenticateToken, CanvasController.getCanvas.bind(CanvasCont
 
 // Delete canvas design
 router.delete('/:id', authenticateToken, CanvasController.deleteCanvas.bind(CanvasController));
-
-// Share canvas with another user
-router.post('/share', authenticateToken, CanvasController.shareCanvas.bind(CanvasController));
-
 
 export default router;
 

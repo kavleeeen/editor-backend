@@ -96,6 +96,23 @@ class UserModel {
     const { password: _, ...userWithoutPassword } = user;
     return userWithoutPassword as User;
   }
+
+  async findUsers(query: any = {}, limit: number = 50, offset: number = 0): Promise<{ data: User[]; total: number }> {
+    const collection = this.getCollection();
+
+    const data = await collection
+      .find(query, {
+        projection: { password: 0 } // Exclude password from results
+      })
+      .sort({ createdAt: -1 })
+      .skip(offset)
+      .limit(limit)
+      .toArray();
+
+    const total = await collection.countDocuments(query);
+
+    return { data, total };
+  }
 }
 
 export default new UserModel();

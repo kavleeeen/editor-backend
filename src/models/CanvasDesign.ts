@@ -1,5 +1,6 @@
 import { MongoClient, Db, Collection } from 'mongodb';
 import { randomUUID } from 'crypto';
+import canvasAccessModel from './CanvasAccess';
 
 export interface CanvasMetadata {
   title?: string;
@@ -19,6 +20,8 @@ export interface CanvasDesign {
     height?: number;
   };
   metadata: CanvasMetadata;
+  yjsState?: Buffer; // Binary state for Yjs synchronization
+  lastSaved?: Date; // Last time Yjs state was saved to DB
 }
 
 class CanvasDesignModel {
@@ -30,12 +33,7 @@ class CanvasDesignModel {
     await client.connect();
     this.db = client.db(dbName);
     this.collection = this.db.collection<CanvasDesign>('canvas_designs');
-    
-    // Create indexes
-    await this.collection.createIndex({ '_id': 1 });
-    await this.collection.createIndex({ userId: 1 }); // Index for userId
-    await this.collection.createIndex({ 'metadata.createdAt': -1 });
-    await this.collection.createIndex({ 'metadata.updatedAt': -1 });
+
   }
 
   async save(id: string, userId: string, designData: any, metadata: Partial<CanvasMetadata>): Promise<CanvasDesign> {
@@ -100,6 +98,36 @@ class CanvasDesignModel {
     return { data, total };
   }
 
+  async findUserAccessibleCanvases(userId: string, limit: number = 50, offset: number = 0): Promise<{ data: CanvasDesign[]; total: number }> {
+    if (!this.collection) {
+      throw new Error('Database not connected');
+    }
+
+    // Get canvas IDs that the user has access to
+    const userAccess = await canvasAccessModel.getUserCanvases(userId);
+    const canvasIds = userAccess;
+
+    if (canvasIds.length === 0) {
+      return { data: [], total: 0 };
+    }
+
+    const data = await this.collection
+      .find(
+        { _id: { $in: canvasIds } },
+        {
+          projection: { designData: 0 } // Exclude designData from list view
+        }
+      )
+      .sort({ 'metadata.updatedAt': -1 })
+      .skip(offset)
+      .limit(limit)
+      .toArray();
+
+    const total = await this.collection.countDocuments({ _id: { $in: canvasIds } });
+
+    return { data, total };
+  }
+
   async delete(id: string, userId?: string): Promise<boolean> {
     if (!this.collection) {
       throw new Error('Database not connected');
@@ -109,6 +137,12 @@ class CanvasDesignModel {
       query.userId = userId;
     }
     const result = await this.collection.deleteOne(query);
+
+    if (result.deletedCount > 0) {
+      // Clean up access records when canvas is deleted
+      await canvasAccessModel.deleteCanvasAccess(id);
+    }
+
     return result.deletedCount > 0;
   }
 
@@ -140,7 +174,36 @@ class CanvasDesignModel {
 
     await this.collection.insertOne(canvasDesign);
 
+    // Grant owner access to the creator
+    await canvasAccessModel.grantAccess(id, userId, 'owner', userId);
+
     return canvasDesign;
+  }
+
+  async saveYjsState(canvasId: string, yjsState: Uint8Array): Promise<void> {
+    if (!this.collection) {
+      throw new Error('Database not connected');
+    }
+
+    await this.collection.updateOne(
+      { _id: canvasId },
+      {
+        $set: {
+          yjsState: Buffer.from(yjsState),
+          lastSaved: new Date(),
+          'metadata.updatedAt': new Date(),
+        },
+      }
+    );
+  }
+
+  async loadYjsState(canvasId: string): Promise<Uint8Array | null> {
+    if (!this.collection) {
+      throw new Error('Database not connected');
+    }
+
+    const canvas = await this.collection.findOne({ _id: canvasId });
+    return canvas?.yjsState ? new Uint8Array(canvas.yjsState) : null;
   }
 }
 

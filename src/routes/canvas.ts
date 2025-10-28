@@ -21,5 +21,9 @@ router.get('/:id', authenticateToken, CanvasController.getCanvas.bind(CanvasCont
 // Delete canvas design
 router.delete('/:id', authenticateToken, CanvasController.deleteCanvas.bind(CanvasController));
 
+// Share canvas with another user
+router.post('/share', authenticateToken, CanvasController.shareCanvas.bind(CanvasController));
+
+
 export default router;
 

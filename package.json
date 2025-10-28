@@ -22,6 +22,7 @@
     "node": ">=18.0.0"
   },
   "dependencies": {
+    "@y/websocket-server": "^0.1.1",
     "bcryptjs": "^3.0.2",
     "cors": "^2.8.5",
     "dotenv": "^16.3.1",
@@ -29,8 +30,14 @@
     "express-rate-limit": "^7.1.5",
     "helmet": "^7.1.0",
     "jsonwebtoken": "^9.0.2",
+    "lib0": "^0.2.114",
     "mongodb": "^6.20.0",
-    "uuid": "^13.0.0"
+    "uuid": "^13.0.0",
+    "ws": "^8.18.3",
+    "y-protocols": "^1.0.6",
+    "y-websocket": "^3.0.0",
+    "yjs": "^13.6.27",
+    "yjs-server": "^0.2.3"
   },
   "devDependencies": {
     "@types/bcryptjs": "^3.0.0",
@@ -41,6 +48,7 @@
     "@types/node": "^20.10.5",
     "@types/supertest": "^6.0.2",
     "@types/uuid": "^11.0.0",
+    "@types/ws": "^8.18.1",
     "@typescript-eslint/eslint-plugin": "^6.14.0",
     "@typescript-eslint/parser": "^6.14.0",
     "eslint": "^8.55.0",
@@ -53,7 +61,7 @@
     "ts-jest": "^29.1.1",
     "ts-loader": "^9.5.1",
     "ts-node": "^10.9.2",
-    "typescript": "^5.3.3"
+    "typescript": "^5.9.3"
   },
   "jest": {
     "preset": "ts-jest",

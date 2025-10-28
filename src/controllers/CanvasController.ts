@@ -1,6 +1,7 @@
 import { Response } from 'express';
 import { AuthRequest } from '../middleware/auth';
 import canvasModel from '../models/CanvasDesign';
+import canvasAccessModel from '../models/CanvasAccess';
 
 class CanvasController {
   async saveCanvas(req: AuthRequest, res: Response): Promise<void> {
@@ -74,13 +75,23 @@ class CanvasController {
         return;
       }
 
-      const canvas = await canvasModel.findById(id, userId);
-
+      const canvas = await canvasModel.findById(id);
       if (!canvas) {
         res.status(404).json({
           success: false,
           error: 'Not found',
           message: `Canvas design with id '${id}' not found`,
+        });
+        return;
+      }
+
+      // Check if user has access to this canvas
+      const hasAccess = await canvasAccessModel.hasAccess(id, userId, 'viewer');
+      if (!hasAccess) {
+        res.status(403).json({
+          success: false,
+          error: 'Forbidden',
+          message: 'You do not have access to this canvas',
         });
         return;
       }
@@ -119,7 +130,7 @@ class CanvasController {
         return;
       }
 
-      const { data, total } = await canvasModel.findAll(limit, offset, userId);
+      const { data, total } = await canvasModel.findUserAccessibleCanvases(userId, limit, offset);
 
       res.status(200).json({
         success: true,
@@ -154,9 +165,9 @@ class CanvasController {
         return;
       }
 
-      const deleted = await canvasModel.delete(id, userId);
-
-      if (!deleted) {
+      // Check if canvas exists
+      const canvas = await canvasModel.findById(id);
+      if (!canvas) {
         res.status(404).json({
           success: false,
           error: 'Not found',
@@ -164,6 +175,19 @@ class CanvasController {
         });
         return;
       }
+
+      // Check if user has owner access to delete this canvas
+      const hasAccess = await canvasAccessModel.hasAccess(id, userId, 'owner');
+      if (!hasAccess) {
+        res.status(403).json({
+          success: false,
+          error: 'Forbidden',
+          message: 'You do not have permission to delete this canvas',
+        });
+        return;
+      }
+
+      const deleted = await canvasModel.delete(id);
 
       res.status(200).json({
         success: true,
@@ -230,13 +254,24 @@ class CanvasController {
         return;
       }
 
-      // Check if canvas exists and belongs to user
-      const existingCanvas = await canvasModel.findById(id, userId);
+      // Check if canvas exists
+      const existingCanvas = await canvasModel.findById(id);
       if (!existingCanvas) {
         res.status(404).json({
           success: false,
           error: 'Not found',
           message: `Canvas design with id '${id}' not found`,
+        });
+        return;
+      }
+
+      // Check if user has editor access to this canvas
+      const hasAccess = await canvasAccessModel.hasAccess(id, userId, 'editor');
+      if (!hasAccess) {
+        res.status(403).json({
+          success: false,
+          error: 'Forbidden',
+          message: 'You do not have permission to edit this canvas',
         });
         return;
       }
@@ -275,6 +310,75 @@ class CanvasController {
       });
     } catch (error: any) {
       console.error('Error updating canvas:', error);
+      res.status(500).json({
+        success: false,
+        error: 'Internal server error',
+        message: error.message,
+      });
+    }
+  }
+
+  async shareCanvas(req: AuthRequest, res: Response): Promise<void> {
+    try {
+      const { canvasId, userId } = req.body;
+      const currentUserId = req.user?.userId;
+
+      if (!currentUserId) {
+        res.status(401).json({
+          success: false,
+          error: 'Unauthorized',
+          message: 'User authentication required',
+        });
+        return;
+      }
+
+      // Validate inputs
+      if (!canvasId || !userId) {
+        res.status(400).json({
+          success: false,
+          error: 'Invalid input',
+          message: 'Canvas ID and User ID are required',
+        });
+        return;
+      }
+
+      // Check if canvas exists
+      const canvas = await canvasModel.findById(canvasId);
+      if (!canvas) {
+        res.status(404).json({
+          success: false,
+          error: 'Not found',
+          message: `Canvas design with id '${canvasId}' not found`,
+        });
+        return;
+      }
+
+      // Check if current user has owner or editor access to share
+      const hasAccess = await canvasAccessModel.hasAccess(canvasId, currentUserId, 'editor');
+      if (!hasAccess) {
+        res.status(403).json({
+          success: false,
+          error: 'Forbidden',
+          message: 'You do not have permission to share this canvas',
+        });
+        return;
+      }
+
+      // Grant access to the specified user (default role: editor)
+      const access = await canvasAccessModel.grantAccess(canvasId, userId, 'editor', currentUserId);
+
+      res.status(200).json({
+        success: true,
+        message: 'Canvas access granted successfully',
+        data: {
+          canvasId: access.canvasId,
+          userId: access.userId,
+          role: access.role,
+          grantedAt: access.grantedAt,
+        },
+      });
+    } catch (error: any) {
+      console.error('Error sharing canvas:', error);
       res.status(500).json({
         success: false,
         error: 'Internal server error',

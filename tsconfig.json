@@ -1,6 +1,6 @@
 {
   "compilerOptions": {
-    "module": "commonjs",
+    "module": "Node16",
     "declaration": true,
     "removeComments": true,
     "allowSyntheticDefaultImports": true,
@@ -14,6 +14,7 @@
     "strictNullChecks": true,
     "esModuleInterop": true,
     "resolveJsonModule": true,
+    "moduleResolution": "node16",
     "types": ["node", "jest"]
   },
   "include": ["src/**/*"],

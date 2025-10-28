@@ -43,3 +43,4 @@ lerna-debug.log*
 .cache/
 .aws/
 .gcloud/
+service-account.json

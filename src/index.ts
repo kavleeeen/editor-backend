@@ -6,12 +6,11 @@ import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
 import routes from './routes';
 import { connectDatabase } from './config/database';
-import http from 'http';
-import { WebSocketServer } from 'ws';
+// WebSocket server removed
 
 const app = express();
 const HTTP_PORT = process.env.PORT ? Number(process.env.PORT) : 3000;
-const WS_PORT = 3001;
+// const WS_PORT = 3001; // removed
 
 // ----------------- Middleware -----------------
 app.use(helmet());
@@ -67,26 +66,7 @@ async function startServer() {
       console.log(`📝 API endpoints available at http://localhost:${HTTP_PORT}/api/v1`);
     });
 
-    // Start WebSocket server for Yjs collaboration
-    const wsHttpServer = http.createServer();
-    const wss = new WebSocketServer({ server: wsHttpServer });
-
-    // Dynamically require the CommonJS module
-    const { setupWSConnection } = require('@y/websocket-server/utils');
-
-    wss.on('connection', (ws, req) => {
-      try {
-        // Use setupWSConnection from @y/websocket-server
-        setupWSConnection(ws, req, { gc: true });
-        console.log(`📄 Client connected to Yjs collaboration server`);
-      } catch (hErr) {
-        console.error('Error while handling incoming WS connection:', hErr);
-      }
-    });
-
-    wsHttpServer.listen(WS_PORT, () => {
-      console.log(`🔗 Yjs WebSocket server listening on ws://localhost:${WS_PORT}`);
-    });
+    // WebSocket collaboration server removed
   } catch (error) {
     console.error('✗ Failed to start servers:', error);
     process.exit(1);

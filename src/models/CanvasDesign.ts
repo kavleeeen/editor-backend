@@ -54,11 +54,20 @@ class CanvasDesignModel {
       },
     };
 
+    // Check if this is a new canvas (doesn't exist yet)
+    const existingCanvas = await this.collection.findOne({ _id: id });
+    const isNewCanvas = !existingCanvas;
+
     await this.collection.replaceOne(
       { _id: id },
       canvasDesign,
       { upsert: true }
     );
+
+    // If this is a new canvas, automatically grant owner access to the creator
+    if (isNewCanvas) {
+      await canvasAccessModel.grantAccess(id, userId, 'owner', userId);
+    }
 
     return canvasDesign;
   }
@@ -85,7 +94,7 @@ class CanvasDesignModel {
     }
 
     const data = await this.collection
-      .find(query, { 
+      .find(query, {
         projection: { designData: 0 } // Exclude designData from list view
       })
       .sort({ 'metadata.updatedAt': -1 })
@@ -103,27 +112,39 @@ class CanvasDesignModel {
       throw new Error('Database not connected');
     }
 
-    // Get canvas IDs that the user has access to
-    const userAccess = await canvasAccessModel.getUserCanvases(userId);
-    const canvasIds = userAccess;
+    // Get canvas IDs via explicit access records
+    const accessCanvasIds = await canvasAccessModel.getUserCanvases(userId);
+    console.log('[findUserAccessibleCanvases] accessCanvasIds', { userId, count: accessCanvasIds.length, accessCanvasIds });
 
-    if (canvasIds.length === 0) {
+    // Also include canvases authored by the user (self-owned), in case access record is missing
+    const owned = await this.collection
+      .find({ userId }, { projection: { _id: 1 } })
+      .toArray();
+    const ownedCanvasIds = owned.map(doc => doc._id);
+    console.log('[findUserAccessibleCanvases] ownedCanvasIds', { userId, count: ownedCanvasIds.length, ownedCanvasIds });
+
+    // Union unique ids
+    const allCanvasIds = Array.from(new Set([
+      ...accessCanvasIds,
+      ...ownedCanvasIds
+    ]));
+    console.log('[findUserAccessibleCanvases] unionIds', { userId, count: allCanvasIds.length, allCanvasIds });
+
+    if (allCanvasIds.length === 0) {
       return { data: [], total: 0 };
     }
 
     const data = await this.collection
       .find(
-        { _id: { $in: canvasIds } },
-        {
-          projection: { designData: 0 } // Exclude designData from list view
-        }
+        { _id: { $in: allCanvasIds } },
+        { projection: { designData: 0 } }
       )
       .sort({ 'metadata.updatedAt': -1 })
       .skip(offset)
       .limit(limit)
       .toArray();
 
-    const total = await this.collection.countDocuments({ _id: { $in: canvasIds } });
+    const total = await this.collection.countDocuments({ _id: { $in: allCanvasIds } });
 
     return { data, total };
   }

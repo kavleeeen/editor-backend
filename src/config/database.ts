@@ -2,7 +2,7 @@ import canvasModel from '../models/CanvasDesign';
 import userModel from '../models/User';
 import canvasAccessModel from '../models/CanvasAccess';
 
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017';
+const MONGODB_URI = process.env.MONGODB_URI;
 const DB_NAME = process.env.DB_NAME || 'editor';
 
 let isConnected = false;

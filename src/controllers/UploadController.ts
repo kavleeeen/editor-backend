@@ -3,10 +3,10 @@ import { Storage } from '@google-cloud/storage';
 import multer from 'multer';
 import { apiLogger } from '../middleware/logger';
 
-// Initialize Google Cloud Storage with service account
+// Initialize Google Cloud Storage with Application Default Credentials
+// This will automatically use the service account attached to Cloud Run
 const storage = new Storage({
-  keyFilename: './service-account.json',
-  projectId: 'acquired-voice-474914-j2'
+  projectId: process.env.GOOGLE_CLOUD_PROJECT_ID || 'acquired-voice-474914-j2'
 });
 const bucket = storage.bucket(process.env.GCS_BUCKET || '');
 

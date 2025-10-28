@@ -7,8 +7,9 @@ set -euo pipefail
 PROJECT_ID=${PROJECT_ID:-"$(gcloud config get-value project 2>/dev/null || true)"}
 REGION=${REGION:-asia-south1}
 SERVICE_NAME=${SERVICE_NAME:-editor-backend}
-# Secret Manager secret name that stores MongoDB URI
+# Secret Manager secret names
 MONGODB_URI_SECRET_NAME=${MONGODB_URI_SECRET_NAME:-MONGODB_URI}
+GCS_BUCKET_SECRET_NAME=${GCS_BUCKET_SECRET_NAME:-GCS_BUCKET}
 IMAGE=gcr.io/${PROJECT_ID}/${SERVICE_NAME}:$(date +%Y%m%d-%H%M%S)
 
 if [[ -z "${PROJECT_ID}" ]]; then
@@ -30,8 +31,8 @@ gcloud run deploy "${SERVICE_NAME}" \
   --cpu 1 \
   --memory 512Mi \
   --max-instances 3 \
-  --set-env-vars NODE_ENV=production \
-  --set-secrets MONGODB_URI=${MONGODB_URI_SECRET_NAME}:latest
+  --set-env-vars NODE_ENV=production,GOOGLE_CLOUD_PROJECT_ID=${PROJECT_ID} \
+  --set-secrets MONGODB_URI=${MONGODB_URI_SECRET_NAME}:latest,GCS_BUCKET=${GCS_BUCKET_SECRET_NAME:-GCS_BUCKET}:latest
 
 echo "Done. Service URL:"
 gcloud run services describe "${SERVICE_NAME}" --region "${REGION}" --format='value(status.url)'

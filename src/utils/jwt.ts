@@ -3,13 +3,14 @@ import jwt, { SignOptions } from 'jsonwebtoken';
 export interface JWTPayload {
   userId: string;
   email: string;
+  name: string;
 }
 
 const JWT_SECRET = process.env.JWT_SECRET || 'fallback-secret-key';
 const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '7d';
 
-export function generateToken(userId: string, email: string): string {
-  const payload: JWTPayload = { userId, email };
+export function generateToken(userId: string, email: string, name: string): string {
+  const payload: JWTPayload = { userId, email, name };
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const options: any = {
     expiresIn: JWT_EXPIRES_IN

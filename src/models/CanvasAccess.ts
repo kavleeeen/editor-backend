@@ -69,10 +69,7 @@ class CanvasAccessModel {
     const access = await this.collection.findOne({
       canvasId,
       userId,
-      $or: [
-        { expiresAt: { $exists: false } },
-        { expiresAt: { $gt: new Date() } }
-      ]
+
     });
 
     if (!access) {
@@ -127,10 +124,7 @@ class CanvasAccessModel {
 
     return await this.collection.find({
       canvasId,
-      $or: [
-        { expiresAt: { $exists: false } },
-        { expiresAt: { $gt: new Date() } }
-      ]
+
     }).toArray();
   }
 
@@ -141,10 +135,7 @@ class CanvasAccessModel {
 
     return await this.collection.find({
       userId,
-      $or: [
-        { expiresAt: { $exists: false } },
-        { expiresAt: { $gt: new Date() } }
-      ]
+
     }).toArray();
   }
 
@@ -159,10 +150,7 @@ class CanvasAccessModel {
 
     const accesses = await this.collection.find({
       userId,
-      $or: [
-        { expiresAt: { $exists: false } },
-        { expiresAt: { $gt: new Date() } }
-      ]
+
     }).toArray();
 
     return accesses.map(access => access.canvasId);

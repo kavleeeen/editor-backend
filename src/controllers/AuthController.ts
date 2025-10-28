@@ -54,7 +54,7 @@ class AuthController {
       }
 
       const user = await userModel.create(email, password, name);
-      const token = generateToken(user._id!.toString(), user.email);
+      const token = generateToken(user._id!.toString(), user.email, user.name);
 
       res.status(201).json({
         success: true,
@@ -113,7 +113,7 @@ class AuthController {
         return;
       }
 
-      const token = generateToken(user._id!.toString(), user.email);
+      const token = generateToken(user._id!.toString(), user.email, user.name);
 
       res.status(200).json({
         success: true,

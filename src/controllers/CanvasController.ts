@@ -86,14 +86,7 @@ class CanvasController {
       }
 
       // Check if user has access to this canvas
-      let hasAccess = await canvasAccessModel.hasAccess(id, userId, 'viewer');
-
-      // Self-heal: if requester is the creator but lacks an access record, grant owner
-      if (!hasAccess && canvas.userId === userId) {
-        await canvasAccessModel.grantAccess(id, userId, 'owner', userId);
-        hasAccess = true;
-      }
-
+      const hasAccess = await canvasAccessModel.hasAccess(id, userId, 'viewer');
       if (!hasAccess) {
         res.status(403).json({
           success: false,
@@ -137,14 +130,7 @@ class CanvasController {
         return;
       }
 
-      console.log('[listCanvases] Start', { userId, limit, offset });
       const { data, total } = await canvasModel.findUserAccessibleCanvases(userId, limit, offset);
-      console.log('[listCanvases] Result', {
-        userId,
-        total,
-        returned: data.length,
-        canvasIds: data.map(c => c._id),
-      });
 
       res.status(200).json({
         success: true,
@@ -280,14 +266,7 @@ class CanvasController {
       }
 
       // Check if user has editor access to this canvas
-      let hasAccess = await canvasAccessModel.hasAccess(id, userId, 'editor');
-
-      // Self-heal: if requester is the creator but lacks an access record, grant owner
-      if (!hasAccess && existingCanvas.userId === userId) {
-        await canvasAccessModel.grantAccess(id, userId, 'owner', userId);
-        hasAccess = true;
-      }
-
+      const hasAccess = await canvasAccessModel.hasAccess(id, userId, 'editor');
       if (!hasAccess) {
         res.status(403).json({
           success: false,
@@ -375,13 +354,7 @@ class CanvasController {
       }
 
       // Check if current user has owner or editor access to share
-      let hasAccess = await canvasAccessModel.hasAccess(canvasId, currentUserId, 'editor');
-
-      // Self-heal: if requester is the creator but lacks an access record, grant owner
-      if (!hasAccess && canvas.userId === currentUserId) {
-        await canvasAccessModel.grantAccess(canvasId, currentUserId, 'owner', currentUserId);
-        hasAccess = true;
-      }
+      const hasAccess = await canvasAccessModel.hasAccess(canvasId, currentUserId, 'editor');
       if (!hasAccess) {
         res.status(403).json({
           success: false,

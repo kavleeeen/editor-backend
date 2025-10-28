@@ -69,18 +69,18 @@ class CanvasAccessModel {
     const access = await this.collection.findOne({
       canvasId,
       userId,
-
+      $or: [
+        { expiresAt: { $exists: false } },
+        { expiresAt: { $gt: new Date() } }
+      ]
     });
 
     if (!access) {
-      console.log('[hasAccess] No access record', { canvasId, userId, requiredRole });
       return false;
     }
 
     const userLevel = roleHierarchy[access.role];
-    const permitted = userLevel >= requiredLevel;
-    console.log('[hasAccess] Access check', { canvasId, userId, role: access.role, requiredRole, permitted });
-    return permitted;
+    return userLevel >= requiredLevel;
   }
 
   async grantAccess(canvasId: string, userId: string, role: 'owner' | 'editor' | 'viewer', grantedBy: string, expiresAt?: Date): Promise<CanvasAccess> {
@@ -127,7 +127,10 @@ class CanvasAccessModel {
 
     return await this.collection.find({
       canvasId,
-
+      $or: [
+        { expiresAt: { $exists: false } },
+        { expiresAt: { $gt: new Date() } }
+      ]
     }).toArray();
   }
 
@@ -138,7 +141,10 @@ class CanvasAccessModel {
 
     return await this.collection.find({
       userId,
-
+      $or: [
+        { expiresAt: { $exists: false } },
+        { expiresAt: { $gt: new Date() } }
+      ]
     }).toArray();
   }
 
@@ -153,12 +159,13 @@ class CanvasAccessModel {
 
     const accesses = await this.collection.find({
       userId,
-
+      $or: [
+        { expiresAt: { $exists: false } },
+        { expiresAt: { $gt: new Date() } }
+      ]
     }).toArray();
 
-    const canvasIds = accesses.map(access => access.canvasId);
-    console.log('[getUserCanvases] Active accesses', { userId, count: canvasIds.length, canvasIds });
-    return canvasIds;
+    return accesses.map(access => access.canvasId);
   }
 
   async deleteCanvasAccess(canvasId: string): Promise<boolean> {

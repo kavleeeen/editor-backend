@@ -6,6 +6,7 @@ import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
 import routes from './routes';
 import { connectDatabase } from './config/database';
+import { requestLogger, errorLogger } from './middleware/logger';
 import http from 'http';
 import { WebSocketServer } from 'ws';
 
@@ -17,6 +18,9 @@ app.use(helmet());
 app.use(cors());
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
+// Request logging middleware (should be early in the middleware chain)
+app.use(requestLogger);
 
 // Trust proxy for Cloud Run (fixes rate limiting X-Forwarded-For warning)
 app.set('trust proxy', 1);
@@ -41,6 +45,9 @@ app.get('/', (_req, res) => {
 app.use((_req, res) => {
   res.status(404).json({ error: 'Route not found' });
 });
+
+// Error logging middleware (should be before error handler)
+app.use(errorLogger);
 
 app.use((err: any, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
   console.error('Error:', err);

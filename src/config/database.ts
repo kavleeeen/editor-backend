@@ -15,7 +15,7 @@ const mongoClientOptions = {
   serverSelectionTimeoutMS: 10000,
   connectTimeoutMS: 10000,
   tls: true,
-  tlsCAFile: '/etc/ssl/certs/ca-certificates.crt'
+  // tlsCAFile: '/etc/ssl/certs/ca-certificates.crt'
 };
 
 // Export the centralized MongoClient and database instance

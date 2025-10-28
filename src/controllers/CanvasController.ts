@@ -9,7 +9,7 @@ class CanvasController {
   async saveCanvas(req: AuthRequest, res: Response): Promise<void> {
     try {
       const { id } = req.params;
-      const { designData, metadata } = req.body;
+      const { designData, metadata, imageUrl } = req.body;
       const userId = req.user?.userId;
 
       if (!userId) {
@@ -41,7 +41,7 @@ class CanvasController {
         return;
       }
 
-      const canvas = await canvasModel.save(id, userId, designData, metadata || {});
+      const canvas = await canvasModel.save(id, userId, designData, imageUrl, metadata || {});
 
       res.status(201).json({
         success: true,
@@ -103,6 +103,7 @@ class CanvasController {
         id: canvas._id,
         data: {
           id: canvas._id,
+          imageUrl: canvas.imageUrl,
           designData: canvas.designData,
           metadata: canvas.metadata,
         },
@@ -244,7 +245,7 @@ class CanvasController {
   async updateCanvas(req: AuthRequest, res: Response): Promise<void> {
     try {
       const { id } = req.params;
-      const { designData, metadata } = req.body;
+      const { designData, metadata, imageUrl } = req.body;
       const userId = req.user?.userId;
 
       if (!userId) {
@@ -298,7 +299,7 @@ class CanvasController {
         return;
       }
 
-      const canvas = await canvasModel.save(id, userId, designData, metadata || {});
+      const canvas = await canvasModel.save(id, userId, designData, imageUrl, metadata || {});
 
       res.status(200).json({
         success: true,

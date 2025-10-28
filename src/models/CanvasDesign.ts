@@ -23,6 +23,7 @@ export interface CanvasDesign {
   metadata: CanvasMetadata;
   yjsState?: Buffer; // Binary state for Yjs synchronization
   lastSaved?: Date; // Last time Yjs state was saved to DB
+  imageUrl?: string; // URL of the canvas thumbnail/image
 }
 
 class CanvasDesignModel {
@@ -40,7 +41,7 @@ class CanvasDesignModel {
     }
   }
 
-  async save(id: string, userId: string, designData: any, metadata: Partial<CanvasMetadata>): Promise<CanvasDesign> {
+  async save(id: string, userId: string, designData: any, imageUrl: string, metadata: Partial<CanvasMetadata>): Promise<CanvasDesign> {
     if (!this.collection) {
       throw new Error('Database not connected');
     }
@@ -50,11 +51,13 @@ class CanvasDesignModel {
       _id: id,
       userId, // Add userId to the design
       designData,
+      imageUrl,
       metadata: {
         version: metadata.version || '1.0',
         createdAt: metadata.createdAt || now,
         updatedAt: now,
         title: metadata.title,
+
       },
     };
 

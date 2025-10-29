@@ -24,6 +24,7 @@ export interface CanvasDesign {
   yjsState?: Buffer; // Binary state for Yjs synchronization
   lastSaved?: Date; // Last time Yjs state was saved to DB
   imageUrl?: string; // URL of the canvas thumbnail/image
+  layerNames?: string[]; // Ordered list of layer names
 }
 
 class CanvasDesignModel {
@@ -41,33 +42,44 @@ class CanvasDesignModel {
     }
   }
 
-  async save(id: string, userId: string, designData: any, imageUrl: string, metadata: Partial<CanvasMetadata>): Promise<CanvasDesign> {
+  async save(
+    id: string,
+    userId: string,
+    designData: any,
+    imageUrl: string,
+    metadata: Partial<CanvasMetadata>,
+    layerNames?: string[]
+  ): Promise<CanvasDesign> {
     if (!this.collection) {
       throw new Error('Database not connected');
     }
 
     const now = new Date();
-    const canvasDesign: CanvasDesign = {
+    const existing = await this.collection.findOne({ _id: id });
+
+    const merged: CanvasDesign = {
       _id: id,
-      userId, // Add userId to the design
+      userId,
       designData,
       imageUrl,
       metadata: {
-        version: metadata.version || '1.0',
-        createdAt: metadata.createdAt || now,
+        version: metadata.version || existing?.metadata.version || '1.0',
+        createdAt: existing?.metadata.createdAt || metadata.createdAt || now,
         updatedAt: now,
-        title: metadata.title,
-
+        title: metadata.title !== undefined ? metadata.title : existing?.metadata.title,
       },
+      layerNames: Array.isArray(layerNames) ? layerNames : existing?.layerNames,
+      yjsState: existing?.yjsState,
+      lastSaved: existing?.lastSaved,
     };
 
     await this.collection.replaceOne(
       { _id: id },
-      canvasDesign,
+      merged,
       { upsert: true }
     );
 
-    return canvasDesign;
+    return merged;
   }
 
   async findById(id: string, userId?: string): Promise<CanvasDesign | null> {

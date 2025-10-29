@@ -9,7 +9,7 @@ class CanvasController {
   async saveCanvas(req: AuthRequest, res: Response): Promise<void> {
     try {
       const { id } = req.params;
-      const { designData, metadata, imageUrl } = req.body;
+      const { designData, metadata, imageUrl, layerNames } = req.body;
       const userId = req.user?.userId;
 
       if (!userId) {
@@ -41,7 +41,20 @@ class CanvasController {
         return;
       }
 
-      const canvas = await canvasModel.save(id, userId, designData, imageUrl, metadata || {});
+      // Validate optional layerNames
+      if (layerNames !== undefined) {
+        const isValidArray = Array.isArray(layerNames) && layerNames.every((n: any) => typeof n === 'string');
+        if (!isValidArray) {
+          res.status(400).json({
+            success: false,
+            error: 'Invalid layerNames',
+            message: 'layerNames must be an array of strings',
+          });
+          return;
+        }
+      }
+
+      const canvas = await canvasModel.save(id, userId, designData, imageUrl, metadata || {}, layerNames);
 
       res.status(201).json({
         success: true,
@@ -51,6 +64,7 @@ class CanvasController {
           id: canvas._id,
           createdAt: canvas.metadata.createdAt,
           updatedAt: canvas.metadata.updatedAt,
+          layerNames: canvas.layerNames || [],
         },
       });
     } catch (error: any) {
@@ -106,6 +120,7 @@ class CanvasController {
           imageUrl: canvas.imageUrl,
           designData: canvas.designData,
           metadata: canvas.metadata,
+          layerNames: canvas.layerNames || [],
         },
       });
     } catch (error: any) {
@@ -245,7 +260,7 @@ class CanvasController {
   async updateCanvas(req: AuthRequest, res: Response): Promise<void> {
     try {
       const { id } = req.params;
-      const { designData, metadata, imageUrl } = req.body;
+      const { designData, metadata, imageUrl, layerNames } = req.body;
       const userId = req.user?.userId;
 
       if (!userId) {
@@ -299,7 +314,20 @@ class CanvasController {
         return;
       }
 
-      const canvas = await canvasModel.save(id, userId, designData, imageUrl, metadata || {});
+      // Validate optional layerNames
+      if (layerNames !== undefined) {
+        const isValidArray = Array.isArray(layerNames) && layerNames.every((n: any) => typeof n === 'string');
+        if (!isValidArray) {
+          res.status(400).json({
+            success: false,
+            error: 'Invalid layerNames',
+            message: 'layerNames must be an array of strings',
+          });
+          return;
+        }
+      }
+
+      const canvas = await canvasModel.save(id, userId, designData, imageUrl, metadata || {}, layerNames);
 
       res.status(200).json({
         success: true,
@@ -309,6 +337,7 @@ class CanvasController {
           id: canvas._id,
           createdAt: canvas.metadata.createdAt,
           updatedAt: canvas.metadata.updatedAt,
+          layerNames: canvas.layerNames || [],
         },
       });
     } catch (error: any) {
